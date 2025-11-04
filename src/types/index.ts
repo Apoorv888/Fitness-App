@@ -16,7 +16,7 @@ export interface Exercise {
   name: string;
   sets: number;
   reps: number | number[];
-  weight?: number;
+  weights?: number[];
   duration?: number; // for cardio
   notes?: string;
 }

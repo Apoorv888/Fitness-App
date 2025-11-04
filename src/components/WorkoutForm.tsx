@@ -19,26 +19,26 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ onClose, editWorkout =
     exercises: (editWorkout?.exercises || []) as Exercise[],
   }));
 
-  // For dynamic reps per set, reps will be an array of strings (one per set)
-  // Use a custom type for exerciseDraft to allow reps as string[]
-  const [exerciseDraft, setExerciseDraft] = useState<{ name?: string; sets?: number; reps: string[]; weight?: number; notes?: string }>({ name: '', sets: 3, reps: ['', '', ''], weight: undefined });
+  // For dynamic reps & weights per set, store drafts as string arrays (blank by default)
+  const [exerciseDraft, setExerciseDraft] = useState<{ name?: string; sets?: number; reps: string[]; weights: string[]; notes?: string }>({ name: '', sets: 3, reps: ['', '', ''], weights: ['', '', ''], notes: '' });
 
   const addExercise = () => {
     if (!exerciseDraft.name) return;
     const sets = Number(exerciseDraft.sets) || 0;
-    // Convert reps array to numbers, fallback to 0 if blank
-    const repsArr = (exerciseDraft.reps || []).map(r => Number(r) || 0);
+    // Convert reps/weights arrays to numbers, keep undefined for blanks
+    const repsArr = (exerciseDraft.reps || []).map(r => r === '' ? undefined : Number(r));
+    const weightsArr = (exerciseDraft.weights || []).map(w => w === '' ? undefined : Number(w));
     const ex = {
       id: Date.now().toString(),
       name: exerciseDraft.name as string,
       sets,
       reps: repsArr,
-      weight: exerciseDraft.weight ? Number(exerciseDraft.weight) : undefined,
+      weights: weightsArr,
       notes: exerciseDraft.notes,
-    };
+    } as import('../types').Exercise;
 
-  setForm(prev => ({ ...prev, exercises: [...prev.exercises, ex as import('../types').Exercise] }));
-  setExerciseDraft({ name: '', sets: 3, reps: ['', '', ''], weight: undefined });
+    setForm(prev => ({ ...prev, exercises: [...prev.exercises, ex] }));
+    setExerciseDraft({ name: '', sets: 3, reps: Array(3).fill(''), weights: Array(3).fill(''), notes: '' });
   };
 
   const removeExercise = (id: string) => {
@@ -110,7 +110,12 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ onClose, editWorkout =
                   <div className="text-sm text-gray-600">
                     {ex.sets} sets x [
                     {Array.isArray(ex.reps) ? ex.reps.join(', ') : ex.reps}
-                    ] reps {ex.weight ? `@ ${ex.weight}kg` : ''}
+                    ] reps
+                      {ex.weights && Array.isArray(ex.weights) && ex.weights.some(w => w !== undefined) && (
+                        <> {' '}@ [
+                          {ex.weights.map(w => (w === undefined ? '-' : w)).join(', ')}kg]
+                        </>
+                      )}
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -120,8 +125,13 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ onClose, editWorkout =
             ))}
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-              <input placeholder="Exercise name" className="input-field" value={exerciseDraft.name || ''} onChange={e => setExerciseDraft(prev => ({ ...prev, name: e.target.value }))} />
-              <input placeholder="Sets" type="number" className="input-field" value={String(exerciseDraft.sets || '')} onChange={e => setExerciseDraft(prev => ({ ...prev, sets: Number(e.target.value) }))} />
+              <input
+                placeholder="Exercise name"
+                className="input-field"
+                value={exerciseDraft.name || ''}
+                onChange={e => setExerciseDraft(prev => ({ ...prev, name: e.target.value }))}
+              />
+
               <input
                 placeholder="Sets"
                 type="number"
@@ -131,46 +141,72 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ onClose, editWorkout =
                 inputMode="numeric"
                 onChange={e => {
                   const sets = Number(e.target.value) || 0;
-                  // Adjust reps array length
+                  // Adjust reps & weights array length
                   setExerciseDraft(prev => ({
                     ...prev,
                     sets,
                     reps: Array(sets).fill('').map((_, i) => (prev.reps && prev.reps[i]) || ''),
+                    weights: Array(sets).fill('').map((_, i) => (prev.weights && prev.weights[i]) || ''),
                   }));
                 }}
               />
-              <div className="flex flex-col gap-1">
-                <span className="text-xs text-gray-500">Reps per set</span>
-                <div className="flex gap-1">
-                  {(exerciseDraft.reps || []).map((rep, idx) => (
-                    <input
-                      key={idx}
-                      type="number"
-                      className="input-field no-spinner w-14"
-                      placeholder={`Set ${idx + 1}`}
-                      value={rep}
-                      inputMode="numeric"
-                      min={0}
-                      onChange={e => {
-                        const val = e.target.value;
-                        setExerciseDraft(prev => ({
-                          ...prev,
-                          reps: (prev.reps || []).map((r, i) => i === idx ? val : r),
-                        }));
-                      }}
-                    />
-                  ))}
+
+              <div className="flex flex-col gap-1 md:col-span-2">
+                <div className="flex gap-2 mb-1">
+                  <span className="text-xs text-gray-500 flex-1 text-center">Reps per set</span>
+                  <span className="text-xs text-gray-500 flex-1 text-center">Weight per set (kg)</span>
                 </div>
 
+                <div className="flex gap-2">
+                  <div className="flex gap-1 flex-1">
+                    {(exerciseDraft.reps || []).map((rep, idx) => (
+                      <input
+                        key={`rep-${idx}`}
+                        type="number"
+                        className="input-field no-spinner w-14"
+                        placeholder={`Set ${idx + 1}`}
+                        value={rep}
+                        inputMode="numeric"
+                        min={0}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setExerciseDraft(prev => ({
+                            ...prev,
+                            reps: (prev.reps || []).map((r, i) => i === idx ? val : r),
+                          }));
+                        }}
+                      />
+                    ))}
+                  </div>
 
-              <input placeholder="Weight (kg)" type="number" className="input-field" value={exerciseDraft.weight ?? ''} onChange={e => setExerciseDraft(prev => ({ ...prev, weight: e.target.value ? Number(e.target.value) : undefined }))} />
+                  <div className="flex gap-1 flex-1">
+                    {(exerciseDraft.weights || []).map((weight, idx) => (
+                      <input
+                        key={`w-${idx}`}
+                        type="number"
+                        className="input-field no-spinner w-14"
+                        placeholder={`Set ${idx + 1}`}
+                        value={weight}
+                        inputMode="numeric"
+                        min={0}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setExerciseDraft(prev => ({
+                            ...prev,
+                            weights: (prev.weights || []).map((w, i) => i === idx ? val : w),
+                          }));
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div>
               <button type="button" onClick={addExercise} className="btn-secondary mt-2">Add Exercise</button>
             </div>
           </div>
-        </div>
         </div>
 
         <div className="flex space-x-2 pt-4">

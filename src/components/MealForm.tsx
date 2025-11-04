@@ -19,17 +19,19 @@ interface MealFormProps {
 export const MealForm: React.FC<MealFormProps> = ({ onClose, editMeal }) => {
   const { addMeal, updateMeal } = useMealStore();
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{ foodName: string; calories: string | number; protein: string | number; carbs: string | number; fat: string | number; type: MealType; date: string }>(() => ({
     foodName: editMeal?.foodName || '',
-    calories: editMeal?.calories || 0,
-    protein: editMeal?.protein || 0,
-    carbs: editMeal?.carbs || 0,
-    fat: editMeal?.fat || 0,
+    calories: editMeal?.calories ?? '',
+    protein: editMeal?.protein ?? '',
+    carbs: editMeal?.carbs ?? '',
+    fat: editMeal?.fat ?? '',
     type: editMeal?.type || 'Breakfast' as MealType,
     date: new Date().toISOString().split('T')[0], // Today's date
-  });
+  }));
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [submitted, setSubmitted] = useState(false);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -38,19 +40,19 @@ export const MealForm: React.FC<MealFormProps> = ({ onClose, editMeal }) => {
       newErrors.foodName = 'Food name is required';
     }
     
-    if (formData.calories <= 0) {
+    if (formData.calories === '' || Number(formData.calories) <= 0) {
       newErrors.calories = 'Calories must be greater than 0';
     }
-    
-    if (formData.protein < 0) {
+
+    if (formData.protein !== '' && Number(formData.protein) < 0) {
       newErrors.protein = 'Protein cannot be negative';
     }
-    
-    if (formData.carbs < 0) {
+
+    if (formData.carbs !== '' && Number(formData.carbs) < 0) {
       newErrors.carbs = 'Carbs cannot be negative';
     }
-    
-    if (formData.fat < 0) {
+
+    if (formData.fat !== '' && Number(formData.fat) < 0) {
       newErrors.fat = 'Fat cannot be negative';
     }
 
@@ -60,40 +62,35 @@ export const MealForm: React.FC<MealFormProps> = ({ onClose, editMeal }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setSubmitted(true);
+
     if (!validateForm()) {
       return;
     }
 
+    const payload = {
+      foodName: formData.foodName,
+      calories: Number(formData.calories) || 0,
+      protein: Number(formData.protein) || 0,
+      carbs: Number(formData.carbs) || 0,
+      fat: Number(formData.fat) || 0,
+      type: formData.type,
+      date: formData.date,
+    };
+
     if (editMeal) {
-      updateMeal(editMeal.id, {
-        foodName: formData.foodName,
-        calories: formData.calories,
-        protein: formData.protein,
-        carbs: formData.carbs,
-        fat: formData.fat,
-        type: formData.type,
-        date: formData.date,
-      });
+      updateMeal(editMeal.id, payload);
     } else {
-      addMeal({
-        foodName: formData.foodName,
-        calories: formData.calories,
-        protein: formData.protein,
-        carbs: formData.carbs,
-        fat: formData.fat,
-        type: formData.type,
-        date: formData.date,
-      });
+      addMeal(payload);
     }
 
-    // Reset form
+    // Reset form (blank numeric fields)
     setFormData({
       foodName: '',
-      calories: 0,
-      protein: 0,
-      carbs: 0,
-      fat: 0,
+      calories: '',
+      protein: '',
+      carbs: '',
+      fat: '',
       type: 'Breakfast',
       date: new Date().toISOString().split('T')[0],
     });
@@ -107,15 +104,20 @@ export const MealForm: React.FC<MealFormProps> = ({ onClose, editMeal }) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'foodName' || name === 'type' || name === 'date' 
+      [name]: name === 'foodName' || name === 'type' || name === 'date'
         ? value 
-        : parseFloat(value) || 0
+        : (value === '' ? '' : parseFloat(value))
     }));
     
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
   };
 
   return (
@@ -146,6 +148,7 @@ export const MealForm: React.FC<MealFormProps> = ({ onClose, editMeal }) => {
             name="date"
             value={formData.date}
             onChange={handleInputChange}
+            onBlur={handleBlur}
             className="input-field"
             required
           />
@@ -161,6 +164,7 @@ export const MealForm: React.FC<MealFormProps> = ({ onClose, editMeal }) => {
             name="type"
             value={formData.type}
             onChange={handleInputChange}
+            onBlur={handleBlur}
             className="input-field"
             required
           >
@@ -184,9 +188,10 @@ export const MealForm: React.FC<MealFormProps> = ({ onClose, editMeal }) => {
             className="input-field"
             placeholder="e.g., Chicken breast, Rice, Apple"
             required
+            onBlur={handleBlur}
           />
           {errors.foodName && (
-            <p className="text-sm text-red-600 mt-1">{errors.foodName}</p>
+            (submitted || touched.foodName) && <p className="text-sm text-red-600 mt-1">{errors.foodName}</p>
           )}
         </div>
 
@@ -204,11 +209,12 @@ export const MealForm: React.FC<MealFormProps> = ({ onClose, editMeal }) => {
               value={formData.calories}
               onChange={handleInputChange}
               className="input-field"
+              onBlur={handleBlur}
               min="0"
               step="1"
               required
             />
-            {errors.calories && (
+            {errors.calories && (submitted || touched.calories) && (
               <p className="text-sm text-red-600 mt-1">{errors.calories}</p>
             )}
           </div>
@@ -225,10 +231,11 @@ export const MealForm: React.FC<MealFormProps> = ({ onClose, editMeal }) => {
               value={formData.protein}
               onChange={handleInputChange}
               className="input-field"
+              onBlur={handleBlur}
               min="0"
               step="0.1"
             />
-            {errors.protein && (
+            {errors.protein && (submitted || touched.protein) && (
               <p className="text-sm text-red-600 mt-1">{errors.protein}</p>
             )}
           </div>
@@ -245,10 +252,11 @@ export const MealForm: React.FC<MealFormProps> = ({ onClose, editMeal }) => {
               value={formData.carbs}
               onChange={handleInputChange}
               className="input-field"
+              onBlur={handleBlur}
               min="0"
               step="0.1"
             />
-            {errors.carbs && (
+            {errors.carbs && (submitted || touched.carbs) && (
               <p className="text-sm text-red-600 mt-1">{errors.carbs}</p>
             )}
           </div>
@@ -265,10 +273,11 @@ export const MealForm: React.FC<MealFormProps> = ({ onClose, editMeal }) => {
               value={formData.fat}
               onChange={handleInputChange}
               className="input-field"
+              onBlur={handleBlur}
               min="0"
               step="0.1"
             />
-            {errors.fat && (
+            {errors.fat && (submitted || touched.fat) && (
               <p className="text-sm text-red-600 mt-1">{errors.fat}</p>
             )}
           </div>

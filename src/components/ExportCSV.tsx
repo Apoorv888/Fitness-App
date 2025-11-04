@@ -29,7 +29,17 @@ export const ExportCSV: React.FC = () => {
   };
 
   const exportWorkouts = () => {
-    const rows = workouts.map(w => ({ date: w.date, type: w.type, duration: w.duration ?? '', exercises: w.exercises.map(e => `${e.name}(${e.sets}x${e.reps}${e.weight? '@'+e.weight:''})`).join('|'), notes: w.notes ?? '' }));
+    const rows = workouts.map(w => ({
+      date: w.date,
+      type: w.type,
+      duration: w.duration ?? '',
+      exercises: w.exercises.map(e => {
+        const reps = Array.isArray(e.reps) ? e.reps.map(r => r === undefined ? '-' : r).join('/') : (e.reps ?? '');
+  const weights = Array.isArray((e as any).weights) ? (e as any).weights.map((wt: any) => wt === undefined ? '-' : wt).join('/') : '';
+        return `${e.name}(${e.sets}x${reps}${weights ? ' @' + weights + 'kg' : ''})`;
+      }).join('|'),
+      notes: w.notes ?? ''
+    }));
     const csv = toCSV(rows, ['date','type','duration','exercises','notes']);
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
