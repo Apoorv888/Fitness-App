@@ -19,21 +19,26 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ onClose, editWorkout =
     exercises: (editWorkout?.exercises || []) as Exercise[],
   }));
 
-  const [exerciseDraft, setExerciseDraft] = useState<Partial<Exercise>>({ name: '', sets: 3, reps: 8, weight: undefined });
+  // For dynamic reps per set, reps will be an array of strings (one per set)
+  // Use a custom type for exerciseDraft to allow reps as string[]
+  const [exerciseDraft, setExerciseDraft] = useState<{ name?: string; sets?: number; reps: string[]; weight?: number; notes?: string }>({ name: '', sets: 3, reps: ['', '', ''], weight: undefined });
 
   const addExercise = () => {
     if (!exerciseDraft.name) return;
-    const ex: Exercise = {
+    const sets = Number(exerciseDraft.sets) || 0;
+    // Convert reps array to numbers, fallback to 0 if blank
+    const repsArr = (exerciseDraft.reps || []).map(r => Number(r) || 0);
+    const ex = {
       id: Date.now().toString(),
       name: exerciseDraft.name as string,
-      sets: Number(exerciseDraft.sets) || 0,
-      reps: Number(exerciseDraft.reps) || 0,
+      sets,
+      reps: repsArr,
       weight: exerciseDraft.weight ? Number(exerciseDraft.weight) : undefined,
       notes: exerciseDraft.notes,
     };
 
-    setForm(prev => ({ ...prev, exercises: [...prev.exercises, ex] }));
-    setExerciseDraft({ name: '', sets: 3, reps: 8, weight: undefined });
+  setForm(prev => ({ ...prev, exercises: [...prev.exercises, ex as import('../types').Exercise] }));
+  setExerciseDraft({ name: '', sets: 3, reps: ['', '', ''], weight: undefined });
   };
 
   const removeExercise = (id: string) => {
@@ -94,7 +99,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ onClose, editWorkout =
           <input type="text" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="input-field" />
         </div>
 
-        <div className="pt-2">
+  <div className="pt-2">
           <h4 className="font-medium mb-2">Exercises</h4>
 
           <div className="space-y-2">
@@ -102,7 +107,11 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ onClose, editWorkout =
               <div key={ex.id} className="flex items-center justify-between bg-gray-50 p-2 rounded-md">
                 <div>
                   <div className="font-medium">{ex.name}</div>
-                  <div className="text-sm text-gray-600">{ex.sets} x {ex.reps} {ex.weight ? `@ ${ex.weight}kg` : ''}</div>
+                  <div className="text-sm text-gray-600">
+                    {ex.sets} sets x [
+                    {Array.isArray(ex.reps) ? ex.reps.join(', ') : ex.reps}
+                    ] reps {ex.weight ? `@ ${ex.weight}kg` : ''}
+                  </div>
                 </div>
                 <div className="flex items-center space-x-2">
                   <button type="button" onClick={() => removeExercise(ex.id)} className="text-red-600">Delete</button>
@@ -113,7 +122,47 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ onClose, editWorkout =
             <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
               <input placeholder="Exercise name" className="input-field" value={exerciseDraft.name || ''} onChange={e => setExerciseDraft(prev => ({ ...prev, name: e.target.value }))} />
               <input placeholder="Sets" type="number" className="input-field" value={String(exerciseDraft.sets || '')} onChange={e => setExerciseDraft(prev => ({ ...prev, sets: Number(e.target.value) }))} />
-              <input placeholder="Reps" type="number" className="input-field" value={String(exerciseDraft.reps || '')} onChange={e => setExerciseDraft(prev => ({ ...prev, reps: Number(e.target.value) }))} />
+              <input
+                placeholder="Sets"
+                type="number"
+                className="input-field no-spinner"
+                value={String(exerciseDraft.sets || '')}
+                min={1}
+                inputMode="numeric"
+                onChange={e => {
+                  const sets = Number(e.target.value) || 0;
+                  // Adjust reps array length
+                  setExerciseDraft(prev => ({
+                    ...prev,
+                    sets,
+                    reps: Array(sets).fill('').map((_, i) => (prev.reps && prev.reps[i]) || ''),
+                  }));
+                }}
+              />
+              <div className="flex flex-col gap-1">
+                <span className="text-xs text-gray-500">Reps per set</span>
+                <div className="flex gap-1">
+                  {(exerciseDraft.reps || []).map((rep, idx) => (
+                    <input
+                      key={idx}
+                      type="number"
+                      className="input-field no-spinner w-14"
+                      placeholder={`Set ${idx + 1}`}
+                      value={rep}
+                      inputMode="numeric"
+                      min={0}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setExerciseDraft(prev => ({
+                          ...prev,
+                          reps: (prev.reps || []).map((r, i) => i === idx ? val : r),
+                        }));
+                      }}
+                    />
+                  ))}
+                </div>
+
+
               <input placeholder="Weight (kg)" type="number" className="input-field" value={exerciseDraft.weight ?? ''} onChange={e => setExerciseDraft(prev => ({ ...prev, weight: e.target.value ? Number(e.target.value) : undefined }))} />
             </div>
 
@@ -121,6 +170,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ onClose, editWorkout =
               <button type="button" onClick={addExercise} className="btn-secondary mt-2">Add Exercise</button>
             </div>
           </div>
+        </div>
         </div>
 
         <div className="flex space-x-2 pt-4">
