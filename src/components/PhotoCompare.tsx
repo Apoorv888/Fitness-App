@@ -11,7 +11,7 @@ export const PhotoCompare: React.FC = () => {
     <div className="card">
       <h3 className="text-lg font-semibold mb-3">Photo Compare</h3>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+  <div className="grid grid-cols-1 md-grid-cols-3 gap-4 items-start">
         <div>
           <label className="text-sm text-gray-600">Left</label>
           <select className="input-field" value={left} onChange={e => setLeft(e.target.value)}>

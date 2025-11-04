@@ -124,7 +124,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ onClose, editWorkout =
               </div>
             ))}
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+            <div className="grid grid-cols-1 md-grid-cols-4 gap-2">
               <input
                 placeholder="Exercise name"
                 className="input-field"
@@ -151,7 +151,7 @@ export const WorkoutForm: React.FC<WorkoutFormProps> = ({ onClose, editWorkout =
                 }}
               />
 
-              <div className="flex flex-col gap-1 md:col-span-2">
+              <div className="flex flex-col gap-1 md-col-span-2">
                 <div className="flex gap-2 mb-1">
                   <span className="text-xs text-gray-500 flex-1 text-center">Reps per set</span>
                   <span className="text-xs text-gray-500 flex-1 text-center">Weight per set (kg)</span>

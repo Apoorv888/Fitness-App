@@ -292,18 +292,33 @@ body {
   gap: 24px;
 }
 
-/* Responsive grid */
+/* Responsive grid: use hyphenated utility classes and attribute selectors to avoid escaped-colon selectors
+   that can confuse CSS minifiers like LightningCSS. Keep hyphenated utilities for direct usage in JSX
+   (e.g. "md-grid-cols-3"). Attribute selectors provide compatibility for any remaining colon-style
+   classes (e.g. "md:grid-cols-3") without using backslash escapes.
+*/
 @media (min-width: 768px) {
-  .md\\:grid-cols-2 {
+  /* Hyphenated utilities (preferred in JSX): */
+  .md-grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .md\\:grid-cols-3 {
+  .md-grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  /* Attribute-based fallbacks for colon-style classes (safe for minifiers): */
+  [class*="md:grid-cols-2"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  [class*="md:grid-cols-3"] {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (min-width: 1024px) {
-  .lg\\:grid-cols-4 {
+  .lg-grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  [class*="lg:grid-cols-4"] {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
@@ -400,11 +415,19 @@ body {
 .duration-200 { transition-duration: 200ms; }
 .duration-300 { transition-duration: 300ms; }
 
-/* Hover utilities */
-.hover\\:bg-gray-50:hover { background-color: #f9fafb; }
-.hover\\:bg-gray-300:hover { background-color: #d1d5db; }
-.hover\\:text-gray-700:hover { color: #374151; }
-.hover\\:shadow-md:hover { 
+/* Attribute-based hover rules to avoid CSS minifier issues with escaped colon selectors */
+[class*="hover:bg-gray-50"]:hover { background-color: #f9fafb; }
+[class*="hover:bg-gray-300"]:hover { background-color: #d1d5db; }
+[class*="hover:text-gray-700"]:hover { color: #374151; }
+[class*="hover:shadow-md"]:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Hyphenated hover utility duplicates (optional alternative) */
+.hover-bg-gray-50:hover { background-color: #f9fafb; }
+.hover-bg-gray-300:hover { background-color: #d1d5db; }
+.hover-text-gray-700:hover { color: #374151; }
+.hover-shadow-md:hover { 
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 

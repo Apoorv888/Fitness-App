@@ -59,7 +59,7 @@ export const Nutrition: React.FC = () => {
       </div>
 
       {/* Date Selector and Quick Actions */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 space-y-4 md:space-y-0">
+  <div className="flex flex-col md-flex-row md-items-center md-justify-between mb-8 space-y-4 md-space-y-0">
         <div className="flex items-center space-x-4">
           <div>
             <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
@@ -131,7 +131,7 @@ export const Nutrition: React.FC = () => {
         <>
 
       {/* Daily Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+  <div className="grid grid-cols-2 md-grid-cols-4 gap-4 mb-8">
         <div className="card text-center">
           <div className="text-2xl mb-2">🔥</div>
           <div className="text-2xl font-bold text-orange-600">{todayMacros.calories}</div>

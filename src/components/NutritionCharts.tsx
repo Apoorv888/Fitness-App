@@ -137,7 +137,7 @@ export const NutritionCharts: React.FC<NutritionChartsProps> = ({ selectedDate }
         </ResponsiveContainer>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+  <div className="grid grid-cols-1 lg-grid-cols-2 gap-8">
         {/* Macro Breakdown */}
         <div className="card">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Today's Macro Breakdown</h3>

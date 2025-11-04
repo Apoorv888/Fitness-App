@@ -102,7 +102,7 @@ export const GoalsForm: React.FC<GoalsFormProps> = ({ onClose }) => {
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-900">Macronutrient Targets</h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md-grid-cols-3 gap-4">
             {/* Protein */}
             <div>
               <label htmlFor="dailyProtein" className="block text-sm font-medium text-gray-700 mb-1">
